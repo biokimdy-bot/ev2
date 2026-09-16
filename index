@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기관계의 통합적 작용 - 성취도 평가 시뮬레이션</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        * { font-family: 'Pretendard', sans-serif; }
+
+        /* 기관계 카드 박동 애니메이션 */
+        @keyframes organPulse {
+            0% { transform: scale(1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+            50% { transform: scale(1.03); box-shadow: 0 12px 20px -3px rgba(0, 0, 0, 0.15); }
+            100% { transform: scale(1); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        }
+
+        /* 활성에 따른 펄스 속도 클래스 */
+        .pulse-very-fast { animation: organPulse 0.45s infinite ease-in-out; }
+        .pulse-fast      { animation: organPulse 1.0s infinite ease-in-out; }
+        .pulse-normal    { animation: organPulse 2.0s infinite ease-in-out; }
+        .pulse-slow      { animation: organPulse 3.8s infinite ease-in-out; }
+        .pulse-very-slow { animation: organPulse 6.5s infinite ease-in-out; opacity: 0.85; }
+
+        /* 드래그 앤 드롭 스타일 */
+        .draggable-item {
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s;
+        }
+        .draggable-item:active { cursor: grabbing; transform: scale(1.05); }
+
+        .drop-zone {
+            transition: all 0.2s;
+            min-height: 52px;
+        }
+        .drop-zone.drag-over {
+            background-color: #eff6ff;
+            border-color: #3b82f6;
+            transform: scale(1.02);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8 text-slate-800">
+
+    <div class="max-w-5xl mx-auto space-y-6">
+        
+        <!-- 헤더 영역 -->
+        <header class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <span class="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">중학교 2학년 과학</span>
+                    <h1 class="text-2xl font-extrabold text-slate-900 mt-1">기관계의 통합적 작용 시뮬레이션 평가</h1>
+                </div>
+                <!-- 운동 강도 선택 조작반 -->
+                <div class="bg-slate-100 p-1.5 rounded-xl flex gap-1 border border-slate-200 w-full md:w-auto">
+                    <button onclick="setIntensity('rest')" id="btn-rest" class="intensity-btn flex-1 md:flex-none px-5 py-2.5 rounded-lg text-sm font-bold transition-all bg-white text-blue-600 shadow-sm">
+                        <i class="fa-solid fa-bed mr-1.5"></i>휴식
+                    </button>
+                    <button onclick="setIntensity('light')" id="btn-light" class="intensity-btn flex-1 md:flex-none px-5 py-2.5 rounded-lg text-sm font-bold transition-all text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-person-walking mr-1.5"></i>가벼운 운동
+                    </button>
+                    <button onclick="setIntensity('heavy')" id="btn-heavy" class="intensity-btn flex-1 md:flex-none px-5 py-2.5 rounded-lg text-sm font-bold transition-all text-slate-600 hover:text-slate-900">
+                        <i class="fa-solid fa-person-running mr-1.5"></i>고강도 운동
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- 1. 기관계 반응 시뮬레이션 섹션 -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-slate-100">
+                <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-heart-pulse text-red-500"></i>
+                    운동 강도별 기관계 활성 변화 시뮬레이션
+                </h2>
+                <span id="intensity-badge" class="text-xs font-semibold px-2.5 py-1 rounded-md bg-blue-50 text-blue-600 border border-blue-200">
+                    현재 상태: 휴식 (정상 범위 유지)
+                </span>
+            </div>
+
+            <!-- 4대 기관계 카드 그리드 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                
+                <!-- 1) 순환계 (Circulatory System) -->
+                <div id="card-circulatory" class="pulse-normal bg-gradient-to-br from-red-50 to-white border-2 border-red-200 rounded-2xl p-5 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-red-500 text-white flex items-center justify-center text-xl shadow-md shadow-red-200">
+                                    <i class="fa-solid fa-heartbeat"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-lg">순환계</h3>
+                                    <p class="text-xs text-slate-500">혈액 및 물질 운반</p>
+                                </div>
+                            </div>
+                            <!-- 미니 게이지 (용어 변경: 활성) -->
+                            <div class="text-right w-24">
+                                <div class="text-xs font-bold text-red-600 mb-1">활성 <span id="gauge-val-circulatory">20%</span></div>
+                                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                    <div id="gauge-bar-circulatory" class="bg-red-500 h-2 rounded-full transition-all duration-500" style="width: 20%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="desc-circulatory" class="text-xs text-slate-600 mt-3 leading-relaxed">
+                            전신에 정상 범위의 혈액을 분배하여 필요한 물질을 운반합니다.
+                        </p>
+                    </div>
+                    <!-- 순환계 하단: 심장 박동수 -->
+                    <div class="mt-4 pt-3 border-t border-red-100 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-500"><i class="fa-solid fa-wave-square text-red-400 mr-1"></i>심장 박동수</span>
+                        <span id="rate-heart" class="text-sm font-extrabold text-red-600 bg-red-100/60 px-2.5 py-0.5 rounded-lg">약 70 회/분</span>
+                    </div>
+                </div>
+
+                <!-- 2) 호흡계 (Respiratory System) -->
+                <div id="card-respiratory" class="pulse-normal bg-gradient-to-br from-blue-50 to-white border-2 border-blue-200 rounded-2xl p-5 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-blue-500 text-white flex items-center justify-center text-xl shadow-md shadow-blue-200">
+                                    <i class="fa-solid fa-lungs"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-lg">호흡계</h3>
+                                    <p class="text-xs text-slate-500">산소 기체 교환</p>
+                                </div>
+                            </div>
+                            <!-- 미니 게이지 (용어 변경: 활성) -->
+                            <div class="text-right w-24">
+                                <div class="text-xs font-bold text-blue-600 mb-1">활성 <span id="gauge-val-respiratory">20%</span></div>
+                                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                    <div id="gauge-bar-respiratory" class="bg-blue-500 h-2 rounded-full transition-all duration-500" style="width: 20%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="desc-respiratory" class="text-xs text-slate-600 mt-3 leading-relaxed">
+                            기체 교환을 통해 체내 산소를 받아들이고 이산화 탄소를 배출합니다.
+                        </p>
+                    </div>
+                    <!-- 호흡계 하단: 호흡수 -->
+                    <div class="mt-4 pt-3 border-t border-blue-100 flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-500"><i class="fa-solid fa-wind text-blue-400 mr-1"></i>호흡수</span>
+                        <span id="rate-breath" class="text-sm font-extrabold text-blue-600 bg-blue-100/60 px-2.5 py-0.5 rounded-lg">약 15 회/분</span>
+                    </div>
+                </div>
+
+                <!-- 3) 소화계 (Digestive System) -->
+                <div id="card-digestive" class="pulse-normal bg-gradient-to-br from-emerald-50 to-white border-2 border-emerald-200 rounded-2xl p-5 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-md shadow-emerald-200">
+                                    <i class="fa-solid fa-utensils"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-lg">소화계</h3>
+                                    <p class="text-xs text-slate-500">영양소 흡수 및 분해</p>
+                                </div>
+                            </div>
+                            <!-- 미니 게이지 (용어 변경: 활성) -->
+                            <div class="text-right w-24">
+                                <div class="text-xs font-bold text-emerald-600 mb-1">활성 <span id="gauge-val-digestive">80%</span></div>
+                                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                    <div id="gauge-bar-digestive" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 80%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="desc-digestive" class="text-xs text-slate-600 mt-3 leading-relaxed">
+                            음식물을 분해하여 몸에 필요한 영양소를 원활하게 혈액으로 흡수합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-emerald-100 flex justify-between items-center text-xs text-slate-500">
+                        <span>상태: <strong id="status-digestive" class="text-emerald-700">원활한 소화 작용</strong></span>
+                    </div>
+                </div>
+
+                <!-- 4) 배설계 (Excretory System) -->
+                <div id="card-excretory" class="pulse-normal bg-gradient-to-br from-purple-50 to-white border-2 border-purple-200 rounded-2xl p-5 flex flex-col justify-between transition-all">
+                    <div>
+                        <div class="flex justify-between items-start">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-purple-500 text-white flex items-center justify-center text-xl shadow-md shadow-purple-200">
+                                    <i class="fa-solid fa-filter"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-extrabold text-slate-900 text-lg">배설계</h3>
+                                    <p class="text-xs text-slate-500">노폐물 여과 및 배출</p>
+                                </div>
+                            </div>
+                            <!-- 미니 게이지 (용어 변경: 활성) -->
+                            <div class="text-right w-24">
+                                <div class="text-xs font-bold text-purple-600 mb-1">활성 <span id="gauge-val-excretory">80%</span></div>
+                                <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                                    <div id="gauge-bar-excretory" class="bg-purple-500 h-2 rounded-full transition-all duration-500" style="width: 80%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="desc-excretory" class="text-xs text-slate-600 mt-3 leading-relaxed">
+                            신장에서 혈액 속 요소를 여과하여 오줌을 생성하고 정상적으로 배출합니다.
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-purple-100 flex justify-between items-center text-xs text-slate-500">
+                        <span>상태: <strong id="status-excretory" class="text-purple-700">정상 여과 작용</strong></span>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 2. 성취도 평가 문항 섹션 -->
+        <section class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-8">
+            <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3">
+                <i class="fa-solid fa-clipboard-check text-blue-600"></i>
+                확인 평가 문항
+            </h2>
+
+            <!-- 문항 1 (드래그 앤 드롭) -->
+            <div class="space-y-4">
+                <div class="flex items-start gap-2">
+                    <span class="bg-blue-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md mt-0.5">Q1</span>
+                    <p class="font-bold text-slate-800 text-base">
+                        세포에서 에너지를 생산하기 위해 호흡계와 소화계를 통해 세포로 공급되는 물질을 아래 보기에서 드래그하여 해당하는 빈칸에 놓으세요.
+                    </p>
+                </div>
+
+                <!-- 드래그할 물질 보기 -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-wrap gap-3 items-center">
+                    <span class="text-xs font-bold text-slate-500 mr-2"><i class="fa-solid fa-hand-pointer mr-1"></i>보기 카드:</span>
+                    <div id="drag-items" class="flex flex-wrap gap-2">
+                        <div draggable="true" ondragstart="drag(event)" id="item-o2" data-val="산소" class="draggable-item bg-white border-2 border-blue-400 text-blue-700 font-bold px-4 py-2 rounded-xl shadow-sm hover:bg-blue-50">산소</div>
+                        <div draggable="true" ondragstart="drag(event)" id="item-co2" data-val="이산화 탄소" class="draggable-item bg-white border-2 border-slate-300 text-slate-700 font-bold px-4 py-2 rounded-xl shadow-sm hover:bg-slate-50">이산화 탄소</div>
+                        <div draggable="true" ondragstart="drag(event)" id="item-nutrient" data-val="영양소" class="draggable-item bg-white border-2 border-emerald-400 text-emerald-700 font-bold px-4 py-2 rounded-xl shadow-sm hover:bg-emerald-50">영양소</div>
+                        <div draggable="true" ondragstart="drag(event)" id="item-urea" data-val="요소" class="draggable-item bg-white border-2 border-purple-300 text-purple-700 font-bold px-4 py-2 rounded-xl shadow-sm hover:bg-purple-50">요소</div>
+                    </div>
+                </div>
+
+                <!-- 드롭 타겟 타일 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <!-- 호흡계 드롭 존 -->
+                    <div class="border-2 border-dashed border-blue-300 bg-blue-50/40 rounded-2xl p-4 flex flex-col justify-center items-center gap-2">
+                        <span class="text-xs font-bold text-blue-700"><i class="fa-solid fa-lungs mr-1"></i>[호흡계]를 통해 세포에 공급되는 물질</span>
+                        <div ondrop="drop(event, 'respiratory')" ondragover="allowDrop(event)" id="zone-respiratory" class="drop-zone bg-white border-2 border-slate-200 rounded-xl w-full flex items-center justify-center p-2 text-sm text-slate-400 font-semibold">
+                            이곳에 카드를 드래그하세요
+                        </div>
+                    </div>
+
+                    <!-- 소화계 드롭 존 -->
+                    <div class="border-2 border-dashed border-emerald-300 bg-emerald-50/40 rounded-2xl p-4 flex flex-col justify-center items-center gap-2">
+                        <span class="text-xs font-bold text-emerald-700"><i class="fa-solid fa-utensils mr-1"></i>[소화계]를 통해 세포에 공급되는 물질</span>
+                        <div ondrop="drop(event, 'digestive')" ondragover="allowDrop(event)" id="zone-digestive" class="drop-zone bg-white border-2 border-slate-200 rounded-xl w-full flex items-center justify-center p-2 text-sm text-slate-400 font-semibold">
+                            이곳에 카드를 드래그하세요
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-slate-100">
+
+            <!-- 문항 2 (수정 요청 반영: 빈칸 옵션 선택 문장 완성형) -->
+            <div class="space-y-4">
+                <div class="flex items-start gap-2">
+                    <span class="bg-blue-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md mt-0.5">Q2</span>
+                    <p class="font-bold text-slate-800 text-base">
+                        다음 문장의 빈칸에 들어갈 알맞은 단어를 각각 선택하세요.
+                    </p>
+                </div>
+
+                <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-base leading-relaxed text-slate-800 font-medium">
+                    고강도 운동을 하면 심장 박동과 호흡이 빨라지는 이유는 근육 세포에 필요한 산소와 영양소를 
+                    <select id="q2-opt1" class="bg-white border-2 border-blue-400 rounded-lg px-3 py-1.5 font-bold text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm mx-1">
+                        <option value="">(선택)</option>
+                        <option value="빠르게">빠르게</option>
+                        <option value="느리게">느리게</option>
+                    </select>
+                    공급하고, 
+                    <select id="q2-opt2" class="bg-white border-2 border-purple-400 rounded-lg px-3 py-1.5 font-bold text-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 shadow-sm mx-1">
+                        <option value="">(선택)</option>
+                        <option value="영양소">영양소</option>
+                        <option value="노폐물">노폐물</option>
+                    </select>
+                    을 제거하기 위해서이다.
+                </div>
+            </div>
+
+            <!-- 제출 및 채점 버튼 -->
+            <div class="pt-4 flex flex-col items-center gap-4">
+                <button onclick="checkAnswers()" class="w-full md:w-64 bg-slate-900 hover:bg-slate-800 text-white font-extrabold py-3.5 px-6 rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paper-plane"></i> 정답 확인 및 채점
+                </button>
+
+                <!-- 정답 피드백 영역 -->
+                <div id="result-box" class="hidden w-full p-5 rounded-xl border"></div>
+            </div>
+
+        </section>
+
+    </div>
+
+    <script>
+        // 수정 데이터 상태 (펄스 방향성 수정 및 '활성' 용어 적용)
+        // - 운동 시: 순환계/호흡계 활성 상승(펄스 빨라짐) vs 소화계/배설계 활성 하강(펄스 느려짐)
+        const intensityData = {
+            rest: {
+                badge: "현재 상태: 휴식 (정상 범위 유지)",
+                circulatory: { pulse: "pulse-normal", val: "20%", width: "20%", rate: "약 70 회/분", desc: "전신에 정상 범위의 혈액을 분배하여 필요한 물질을 운반합니다." },
+                respiratory: { pulse: "pulse-normal", val: "20%", width: "20%", rate: "약 15 회/분", desc: "평소 필요한 양만큼의 산소를 받아들이고 이산화 탄소를 배출합니다." },
+                digestive:   { pulse: "pulse-normal", val: "80%", width: "80%", status: "원활한 소화 작용", desc: "음식물을 분해하여 몸에 필요한 영양소를 원활하게 혈액으로 흡수합니다." },
+                excretory:   { pulse: "pulse-normal", val: "80%", width: "80%", status: "정상 여과 작용", desc: "신장에서 혈액 속 요소를 여과하여 오줌을 정상적으로 생성 및 배출합니다." }
+            },
+            light: {
+                badge: "현재 상태: 가벼운 운동 (순환/호흡 활성화, 소화/배설 활성 둔화)",
+                circulatory: { pulse: "pulse-fast", val: "55%", width: "55%", rate: "약 110 회/분", desc: "근육으로 피가 집중 공급되기 시작하며 순환 활성이 크게 증가합니다." },
+                respiratory: { pulse: "pulse-fast", val: "50%", width: "50%", rate: "약 25 회/분", desc: "근육의 산소 요구량이 늘어남에 따라 호흡 활성이 촉진됩니다." },
+                digestive:   { pulse: "pulse-slow", val: "45%", width: "45%", status: "소화 활성 둔화", desc: "혈관이 수축하여 소화계 활성이 둔화되고 펄스 박동이 느려집니다." },
+                excretory:   { pulse: "pulse-slow", val: "45%", width: "45%", status: "여과 활성 둔화", desc: "신장의 여과 활성이 감소하며 배설계 박동 및 오줌 생성이 줄어듭니다." }
+            },
+            heavy: {
+                badge: "현재 상태: 고강도 운동 (순환/호흡 최대화, 소화/배설 활성 최소화)",
+                circulatory: { pulse: "pulse-very-fast", val: "85%", width: "95%", rate: "약 170 회/분", desc: "혈액이 골격근으로 쏠리며 순환계가 최고 속도로 박동합니다." },
+                respiratory: { pulse: "pulse-very-fast", val: "90%", width: "90%", rate: "약 45 회/분", desc: "가쁜 호흡으로 대량의 산소를 받아들이고 이산화 탄소를 배출합니다." },
+                digestive:   { pulse: "pulse-very-slow", val: "10%", width: "10%", status: "소화 활성 최소화", desc: "혈관 수축으로 소화계 활성이 최소화되며 펄스가 매우 느리게 뜁니다." },
+                excretory:   { pulse: "pulse-very-slow", val: "10%", width: "10%", status: "배설 활성 최소화", desc: "신장 여과 기능이 억제되며 배설계 활성과 박동이 최저 상태에 도달합니다." }
+            }
+        };
+
+        // All pulse CSS classes list for clean removal
+        const allPulseClasses = ['pulse-very-fast', 'pulse-fast', 'pulse-normal', 'pulse-slow', 'pulse-very-slow'];
+
+        // 운동 강도 변경 핸들러
+        function setIntensity(type) {
+            // 버튼 스타일 전환
+            document.querySelectorAll('.intensity-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-blue-600', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+            const activeBtn = document.getElementById(`btn-${type}`);
+            activeBtn.classList.add('bg-white', 'text-blue-600', 'shadow-sm');
+
+            const data = intensityData[type];
+            document.getElementById('intensity-badge').innerText = data.badge;
+
+            // 각 기관계별 독립적인 펄스 속도 및 데이터 업데이트
+            const organList = ['circulatory', 'respiratory', 'digestive', 'excretory'];
+            organList.forEach(organ => {
+                const card = document.getElementById(`card-${organ}`);
+                card.classList.remove(...allPulseClasses);
+                card.classList.add(data[organ].pulse);
+
+                document.getElementById(`gauge-val-${organ}`).innerText = data[organ].val;
+                document.getElementById(`gauge-bar-${organ}`).style.width = data[organ].width;
+                document.getElementById(`desc-${organ}`).innerText = data[organ].desc;
+            });
+
+            // 순환계/호흡계 하단 수치
+            document.getElementById('rate-heart').innerText = data.circulatory.rate;
+            document.getElementById('rate-breath').innerText = data.respiratory.rate;
+
+            // 소화계/배설계 상태 텍스트
+            document.getElementById('status-digestive').innerText = data.digestive.status;
+            document.getElementById('status-excretory').innerText = data.excretory.status;
+        }
+
+        // --- 드래그 앤 드롭 로직 ---
+        function allowDrop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('drag-over');
+        }
+
+        document.querySelectorAll('.drop-zone').forEach(zone => {
+            zone.addEventListener('dragleave', (e) => {
+                e.currentTarget.classList.remove('drag-over');
+            });
+        });
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+
+        function drop(ev, organ) {
+            ev.preventDefault();
+            const zone = ev.currentTarget;
+            zone.classList.remove('drag-over');
+            const dataId = ev.dataTransfer.getData("text");
+            const draggedEl = document.getElementById(dataId);
+
+            if (draggedEl) {
+                zone.innerHTML = '';
+                zone.appendChild(draggedEl);
+                zone.classList.remove('text-slate-400');
+            }
+        }
+
+        // --- 정답 확인 로직 ---
+        function checkAnswers() {
+            let score = 0;
+            
+            // Q1 확인
+            const resZone = document.getElementById('zone-respiratory');
+            const digZone = document.getElementById('zone-digestive');
+            const resItem = resZone.querySelector('.draggable-item');
+            const digItem = digZone.querySelector('.draggable-item');
+
+            const q1ResCorrect = resItem && resItem.getAttribute('data-val') === '산소';
+            const q1DigCorrect = digItem && digItem.getAttribute('data-val') === '영양소';
+            const q1Correct = q1ResCorrect && q1DigCorrect;
+            if (q1Correct) score += 50;
+
+            // Q2 확인 (수정된 빈칸 옵션 선택)
+            const q2Opt1 = document.getElementById('q2-opt1').value;
+            const q2Opt2 = document.getElementById('q2-opt2').value;
+
+            const q2Correct = (q2Opt1 === '빠르게') && (q2Opt2 === '노폐물');
+            if (q2Correct) score += 50;
+
+            // 결과 화면 표시
+            const resultBox = document.getElementById('result-box');
+            resultBox.classList.remove('hidden', 'bg-green-50', 'bg-red-50', 'border-green-300', 'border-red-300');
+
+            if (score === 100) {
+                resultBox.classList.add('bg-green-50', 'border-green-300');
+                resultBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-green-800 font-extrabold text-lg">
+                        <i class="fa-solid fa-circle-check text-green-600"></i> 축하합니다! 완벽하게 정답을 맞추셨습니다! (100점)
+                    </div>
+                    <ul class="text-xs text-green-700 mt-2 space-y-1 leading-relaxed">
+                        <li>• <strong>Q1 해설:</strong> 호흡계를 통해서는 <strong>산소</strong>가, 소화계를 통해서는 <strong>영양소</strong>가 흡수되어 세포로 공급됩니다.</li>
+                        <li>• <strong>Q2 해설:</strong> 고강도 운동 시 근육 세포의 세포 호흡을 촉진하기 위해 산소와 영양소를 <strong>빠르게</strong> 공급하고 발생한 <strong>노폐물</strong>을 배출해야 합니다.</li>
+                    </ul>
+                `;
+            } else {
+                resultBox.classList.add('bg-red-50', 'border-red-300');
+                resultBox.innerHTML = `
+                    <div class="flex items-center gap-2 text-red-800 font-extrabold text-lg">
+                        <i class="fa-solid fa-triangle-exclamation text-red-600"></i> 오답이 있습니다. 다시 확인해보세요. (득점: ${score}점)
+                    </div>
+                    <div class="text-xs text-red-700 mt-2 space-y-1 leading-relaxed">
+                        <p>${!q1Correct ? '• Q1 오답: [호흡계]에는 산소, [소화계]에는 영양소 카드를 드래그해야 합니다.' : '• Q1: 정답입니다!'}</p>
+                        <p>${!q2Correct ? '• Q2 오답: 산소와 영양소를 [빠르게] 공급하고, [노폐물]을 제거해야 합니다.' : '• Q2: 정답입니다!'}</p>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
